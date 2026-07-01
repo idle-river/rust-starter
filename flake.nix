@@ -1,15 +1,46 @@
 {
-  description = "A very basic flake";
+  description = "Rust Starter Flake";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    naersk.url = "github:nix-community/naersk";
   };
 
-  outputs = { self, nixpkgs }: {
-
-    packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
-
-    packages.x86_64-linux.default = self.packages.x86_64-linux.hello;
-
+  nixConfig = {
+    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = "https://devenv.cachix.org";
   };
+
+  outputs =
+    {
+      self,
+      nixpkgs,
+      devenv,
+      naersk,
+      ...
+    }@inputs:
+    let
+      system = "aarch64-darwin";
+      pkgs = nixpkgs.legacyPackages.${system};
+
+      naerskLib = pkgs.callPackage naersk { };
+    in
+    {
+      devShells.${system}.default = devenv.lib.mkShell {
+        inherit inputs pkgs;
+        modules = [
+          ./devenv.nix
+        ];
+      };
+
+      packages.${system}.default = naerskLib.buildPackage {
+        src = "./.";
+      };
+    };
 }

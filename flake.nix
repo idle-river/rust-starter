@@ -40,7 +40,8 @@
       };
 
       packages.${system}.default = naerskLib.buildPackage {
-        src = "./.";
+        version = "0.1.0";
+        src = ./.;
       };
     };
 }

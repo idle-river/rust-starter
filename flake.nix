@@ -26,22 +26,38 @@
       ...
     }@inputs:
     let
-      system = "aarch64-darwin";
-      pkgs = nixpkgs.legacyPackages.${system};
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
 
-      naerskLib = pkgs.callPackage naersk { };
+      eachSystem = f: nixpkgs.lib.genAttrs systems (system: f system (nixpkgs.legacyPackages.${system}));
     in
     {
-      devShells.${system}.default = devenv.lib.mkShell {
-        inherit inputs pkgs;
-        modules = [
-          ./devenv.nix
-        ];
-      };
+      devShells = eachSystem (
+        system: pkgs: {
+          default = devenv.lib.mkShell {
+            inherit inputs pkgs;
+            modules = [
+              ./devenv.nix
+            ];
+          };
+        }
+      );
 
-      packages.${system}.default = naerskLib.buildPackage {
-        version = "0.1.0";
-        src = ./.;
-      };
+      packages = eachSystem (
+        system: pkgs:
+        let
+          naerskLib = pkgs.callPackage naersk { };
+        in
+        {
+          default = naerskLib.buildPackage {
+            version = "0.1.0";
+            src = ./.;
+          };
+        }
+      );
     };
 }

@@ -4,7 +4,7 @@
 }:
 
 {
-  packages = with pkgs; [ git ];
+  packages = with pkgs; [ cargo-watch ];
 
   languages.rust = {
     enable = true;
